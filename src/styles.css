@@ -37,7 +37,7 @@ body {
   z-index: 1000;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   padding: 0;
   background: transparent;
   backdrop-filter: none;
@@ -52,7 +52,7 @@ body {
 .toolbar-group {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 1px;
   -webkit-app-region: no-drag;
 }
 
@@ -77,7 +77,7 @@ body {
 }
 
 .size-slider {
-  width: 96px;
+  width: 70px;
   accent-color: #ffffff;
   cursor: pointer;
 }
@@ -86,7 +86,7 @@ body {
   width: 1px;
   height: 20px;
   background: rgba(255, 255, 255, 0.15);
-  margin: 0 6px;
+  margin: 0 4px;
 }
 
 /* === Color Buttons === */
@@ -125,9 +125,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   border: none;
   background: transparent;
   color: rgba(255, 255, 255, 0.65);
