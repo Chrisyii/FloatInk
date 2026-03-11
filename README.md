@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="app-icon.png" width="160" alt="FloatInk Logo" />
+  <img src="floatink.png" width="160" alt="FloatInk Logo" />
 
   <h1>🖋️ FloatInk</h1>
 
