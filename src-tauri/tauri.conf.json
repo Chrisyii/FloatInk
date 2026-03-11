@@ -22,7 +22,7 @@
                 "visible": false,
                 "transparent": true,
                 "decorations": false,
-                "alwaysOnTop": true,
+                "alwaysOnTop": false,
                 "skipTaskbar": true,
                 "hiddenTitle": true,
                 "titleBarStyle": "Overlay"

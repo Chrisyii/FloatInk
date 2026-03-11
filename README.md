@@ -4,44 +4,70 @@
   <h1>🖋️ FloatInk</h1>
 
   <p>
-    <strong>A modern, screen-agnostic annotation tool for macOS.</strong>
+    <strong>A modern, sleek, and frictionless screen annotation tool exclusively for macOS.</strong>
   </p>
 
   <p>
-    <a href="#features">Features</a> •
-    <a href="#installation">Installation</a> •
-    <a href="#development">Development</a> •
-    <a href="#license">License</a>
+    <a href="https://github.com/Chrisyii/FloatInk/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/Chrisyii/FloatInk?style=for-the-badge&color=blue"></a>
+    <img alt="macOS" src="https://img.shields.io/badge/macOS-000000?style=for-the-badge&logo=apple&logoColor=white">
+    <img alt="Tauri" src="https://img.shields.io/badge/Tauri-FFC131?style=for-the-badge&logo=tauri&logoColor=white">
+    <img alt="Rust" src="https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white">
+    <img alt="License" src="https://img.shields.io/github/license/Chrisyii/FloatInk?style=for-the-badge&color=green">
+  </p>
+
+  <p>
+    <a href="#-features">Features</a> •
+    <a href="#-keyboard-shortcuts">Shortcuts</a> •
+    <a href="#-installation">Installation</a> •
+    <a href="#-development">Development</a> •
+    <a href="#-license">License</a>
   </p>
 </div>
 
 <br />
 
-FloatInk is a sleek, lightweight, and powerful screen annotation utility designed specifically for macOS. Whether you're presenting, recording tutorials, or just need to visually mark up your screen, FloatInk gives you a frictionless "draw anywhere" experience built on top of modern web technologies using [Tauri](https://tauri.app/).
+> FloatInk is designed to be the ultimate presentation and tutorial companion. With a single keystroke, your entire screen becomes a canvas. Draw freely over any application flawlessly with zero lag.
+
+<div align="center">
+  <!-- TODO: Drop a beautiful screenshot of FloatInk in action right here! -->
+<!-- <img src="assets/preview.png" alt="FloatInk Preview" width="100%" /> -->
+</div>
 
 ## ✨ Features
 
-- **Draw Anywhere:** An overlay that sits on top of all your applications, allowing you to annotate freely.
-- **Native macOS Feel:** Designed to look and feel like a first-class citizen on your Mac.
-- **Blazing Fast:** Powered by Tauri (Rust + Webview), taking virtually zero resources in the background.
-- **Stunning UI:** Features a meticulously crafted, glassmorphic UI and a beautiful bespoke app icon.
-- **Offline First:** Fully local, privacy-respecting, and fast.
+- **🎨 Draw Anywhere:** An invisible overlay sits on top of all your applications, allowing you to annotate freely over anything.
+- **⚡ Blazing Fast:** Powered by Tauri (Rust + Webview), it utilizes incredibly little memory and sits quietly in the background.
+- **💎 Glassmorphic UI:** A meticulously crafted, translucent floating toolbar that looks and feels native to macOS Sequoia.
+- **🧰 Versatile Toolkit:** Includes a High-Precision Pen, Laser Pointer, Highlighter, Shapes (Arrows, Rectangles, Ellipses), and customizable Text inputs.
+- **🛡️ Privacy First:** 100% offline, local, and privacy-respecting. No telemetry.
+
+## ⌨️ Keyboard Shortcuts
+
+FloatInk is built around pure speed. Use these shortcuts to seamlessly integrate it into your workflow:
+
+| Global Shortcut | Action |
+| --- | --- |
+| `Cmd + Shift + D` | **Toggle the canvas** overlay on or off instantly across all spaces |
+| `Esc` | Clear all drawings, exit text inputs, and close the overlay |
+| `Cmd + Z` | Undo the last drawing stroke or action |
+| `Cmd + Shift + Z` | Redo the last undone drawing stroke or action |
 
 ## 🚀 Installation
 
-*Pre-compiled binaries will be available in the upcoming Releases section soon.*
+*Pre-compiled standalone `.app` and `.dmg` binaries will be available in the [Releases](https://github.com/Chrisyii/FloatInk/releases) section soon!*
 
-For now, you can build FloatInk from source.
+For now, you can build FloatInk from source effortlessly.
 
 ## 💻 Development
 
-FloatInk is built with **Tauri**. To get started with development, you'll need Node.js and the Rust toolchain installed.
+FloatInk is built entirely with **Rust, HTML, CSS, and pure JS**, bundled securely using **Tauri**.
 
-### Pre-requisites
+### Prerequisites
 
-1. Install [Node.js](https://nodejs.org/)
-2. Install [Rust](https://www.rust-lang.org/tools/install)
-3. Follow the [Tauri macOS environment setup guide](https://tauri.app/v1/guides/getting-started/prerequisites#macos)
+You will need the following installed on your machine:
+1. [Node.js](https://nodejs.org/) (v16 or higher)
+2. [Rust / Cargo](https://www.rust-lang.org/tools/install)
+3. Follow the [Tauri macOS environment setup guide](https://tauri.app/v1/guides/getting-started/prerequisites#macos) if you haven't already.
 
 ### Getting Started
 
@@ -51,7 +77,7 @@ FloatInk is built with **Tauri**. To get started with development, you'll need N
    cd FloatInk
    ```
 
-2. Install dependencies:
+2. Install frontend dependencies:
    ```bash
    npm install
    ```
@@ -61,15 +87,25 @@ FloatInk is built with **Tauri**. To get started with development, you'll need N
    npm run dev
    ```
 
-4. Build the release bundle (.app / .dmg):
+4. Build the release bundle (`.app` / `.dmg`):
    ```bash
    npm run build
    ```
+   *The built app will be automatically located in `src-tauri/target/release/bundle/macos/FloatInk.app`.*
 
-## 🎨 Design & Assets
+## 🤝 Contributing
 
-The application icon and core visual identity have been completely custom-designed for this project, adhering strictly to the Apple Human Interface Guidelines for squircle dimension padding (82.4% ratio) to look perfectly native in your Dock.
+Contributions are completely welcome! If you have ideas for new features, find a bug, or want to improve the codebase, feel free to open an Issue or submit a Pull Request.
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request!
 
 ## 📜 License
 
-This project is open-sourced under the [MIT License](LICENSE).
+This project is open-sourced and distributed under the MIT License. See `LICENSE` for more information.
+
+<p align="center">
+  Made with ❤️ by <a href="https://github.com/Chrisyii">Chrisyii</a>
+</p>
