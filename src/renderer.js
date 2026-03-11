@@ -2,6 +2,17 @@
 
 const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: () => { } };
 
+// --- Custom Cursors ---
+const pencilCursor = (() => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l1.5-4.5L17 4a2 2 0 0 1 3 3L7.5 19.5Z"/><path d="M15 6l3 3"/></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 2 22, crosshair`;
+})();
+
+const laserCursor = (() => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="4" fill="%23FF3B30" opacity="0.9"/><circle cx="8" cy="8" r="2" fill="white" opacity="0.7"/></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 8 8, crosshair`;
+})();
+
 // --- State Management ---
 const state = {
   currentTool: 'pen',
@@ -70,6 +81,17 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 resetDrawState();
+
+function updateCursor() {
+  if (state.currentTool === 'text') {
+    canvas.style.cursor = 'text';
+  } else if (state.currentTool === 'laser') {
+    canvas.style.cursor = laserCursor;
+  } else {
+    canvas.style.cursor = pencilCursor;
+  }
+}
+updateCursor();
 
 // --- Save/Restore Canvas Snapshot ---
 function saveSnapshot() {
@@ -217,22 +239,87 @@ function drawLine(x1, y1, x2, y2, color, width) {
   ctx.restore();
 }
 
+// --- Highlighter Stroke ---
+// Draws the full stroke path in one pass with a single alpha layer,
+// preventing transparency overlap at segment joints.
+function drawHighlightStroke(points, color, width, alpha) {
+  if (points.length < 2) return;
+  ctx.save();
+  resetDrawState();
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length; i++) {
+    ctx.lineTo(points[i].x, points[i].y);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+
+// --- Freehand Path (for check preview) ---
+function drawFreehandPath(points, color, width) {
+  if (points.length < 2) return;
+  beginStroke(color, width);
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length; i++) {
+    ctx.lineTo(points[i].x, points[i].y);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+
+// --- Point Bounds Helper ---
+function getPointsBounds(points) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const p of points) {
+    if (p.x < minX) minX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y > maxY) maxY = p.y;
+  }
+  return { minX, minY, maxX, maxY };
+}
+
 // --- Laser Pointer Effect ---
 let laserTrail = [];
 let laserAnimFrame = null;
 
 function animateLaser() {
   const now = Date.now();
-  // Clear disappeared trail points
   laserTrail = laserTrail.filter(p => now - p.t < 800);
 
+  restorePreview();
+
   if (laserTrail.length > 1) {
-    // Need to redraw based on previous frame, but simply redraw laser effect layer here
-    // Actually the laser pointer is only drawn on the temporary layer
+    for (let i = 1; i < laserTrail.length; i++) {
+      const age = now - laserTrail[i].t;
+      if (age > 800) continue;
+      const alpha = 1 - age / 800;
+      ctx.save();
+      ctx.globalAlpha = alpha * 0.8;
+      ctx.strokeStyle = '#FF3B30';
+      ctx.lineWidth = 3;
+      ctx.shadowColor = '#FF3B30';
+      ctx.shadowBlur = 12;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(laserTrail[i - 1].x, laserTrail[i - 1].y);
+      ctx.lineTo(laserTrail[i].x, laserTrail[i].y);
+      ctx.stroke();
+      ctx.restore();
+    }
   }
 
-  if (laserTrail.length > 0 || state.currentTool === 'laser') {
+  if (laserTrail.length > 0) {
     laserAnimFrame = requestAnimationFrame(animateLaser);
+  } else {
+    laserAnimFrame = null;
+    restorePreview();
   }
 }
 
@@ -268,26 +355,27 @@ function onMouseDown(e) {
 
   const tool = state.currentTool;
 
-  if (tool === 'pen' || tool === 'marker') {
+  if (tool === 'pen') {
     penPoints = [pos];
     saveSnapshot();
-    const alpha = tool === 'marker' ? 0.35 : 1;
-    const width = tool === 'marker' ? state.lineWidth * 4 : state.lineWidth;
-    drawTapPoint(pos, state.currentColor, width, alpha);
+    drawTapPoint(pos, state.currentColor, state.lineWidth, 1);
+  } else if (tool === 'marker') {
+    penPoints = [pos];
+    saveSnapshot();
+    savePreview();
   } else if (tool === 'laser') {
-    laserTrail = [{ ...pos, t: Date.now() }];
-    if (!laserAnimFrame) animateLaser();
+    laserTrail = [];
+    savePreview();
+    laserTrail.push({ ...pos, t: Date.now() });
+    if (!laserAnimFrame) laserAnimFrame = requestAnimationFrame(animateLaser);
   } else if (tool === 'text') {
     showTextInput(pos.x, pos.y);
     state.isDrawing = false;
     return;
   } else if (tool === 'check') {
-    // Draw checkmark directly
+    penPoints = [pos];
     saveSnapshot();
-    const size = 30;
-    drawCheck(pos.x, pos.y, size, state.currentColor, state.lineWidth + 1);
-    state.isDrawing = false;
-    return;
+    savePreview();
   } else {
     // Shape tool - save preview snapshot
     saveSnapshot();
@@ -305,32 +393,17 @@ function onMouseMove(e) {
     penPoints.push(pos);
     drawPreciseStroke(prev, pos, state.currentColor, state.lineWidth, 1);
   } else if (tool === 'marker') {
-    const prev = penPoints[penPoints.length - 1];
     penPoints.push(pos);
-    drawPreciseStroke(prev, pos, state.currentColor, state.lineWidth * 4, 0.35);
+    // Redraw full highlight stroke each frame for correct transparency blending
+    restorePreview();
+    drawHighlightStroke(penPoints, state.currentColor, state.lineWidth * 4, 0.35);
+  } else if (tool === 'check') {
+    penPoints.push(pos);
+    // Show freehand preview while drawing
+    restorePreview();
+    drawFreehandPath(penPoints, state.currentColor, state.lineWidth + 1);
   } else if (tool === 'laser') {
     laserTrail.push({ ...pos, t: Date.now() });
-    // Draw laser pointer effect (temporary red glowing line)
-    restorePreview();
-    if (!previewSnapshot) savePreview();
-    const now = Date.now();
-    for (let i = 1; i < laserTrail.length; i++) {
-      const age = now - laserTrail[i].t;
-      if (age > 800) continue;
-      const alpha = 1 - age / 800;
-      ctx.save();
-      ctx.globalAlpha = alpha * 0.8;
-      ctx.strokeStyle = '#FF3B30';
-      ctx.lineWidth = 3;
-      ctx.shadowColor = '#FF3B30';
-      ctx.shadowBlur = 12;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(laserTrail[i - 1].x, laserTrail[i - 1].y);
-      ctx.lineTo(laserTrail[i].x, laserTrail[i].y);
-      ctx.stroke();
-      ctx.restore();
-    }
   } else {
     // Shape preview
     restorePreview();
@@ -352,16 +425,24 @@ function onMouseUp(e) {
   const pos = getPos(e);
   const tool = state.currentTool;
 
-  if (tool === 'pen' || tool === 'marker') {
+  if (tool === 'pen') {
+    penPoints = [];
+  } else if (tool === 'marker') {
+    // Final highlight stroke is already drawn on canvas
+    penPoints = [];
+  } else if (tool === 'check') {
+    // Auto-correct freehand drawing to a clean checkmark
+    if (penPoints.length >= 2) {
+      restorePreview();
+      const bounds = getPointsBounds(penPoints);
+      const cx = (bounds.minX + bounds.maxX) / 2;
+      const cy = (bounds.minY + bounds.maxY) / 2;
+      const size = Math.max(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY, 24);
+      drawCheck(cx, cy, size, state.currentColor, state.lineWidth + 1);
+    }
     penPoints = [];
   } else if (tool === 'laser') {
-    // Clear trail after laser pointer ends (fade out effect)
-    setTimeout(() => {
-      if (!state.isDrawing) {
-        restorePreview();
-        laserTrail = [];
-      }
-    }, 800);
+    // Laser trail fades out via animation loop, nothing to do here
   }
 
   previewSnapshot = null;
@@ -376,7 +457,8 @@ function showTextInput(x, y) {
   textInput.style.top = y + 'px';
   textInput.style.color = state.currentColor;
   textInput.value = '';
-  textInput.focus();
+  // Delay focus to ensure the element is rendered and the panel can accept input
+  requestAnimationFrame(() => textInput.focus());
 }
 
 textInput.addEventListener('keydown', (e) => {
@@ -462,14 +544,7 @@ document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
     btn.classList.add('active');
     state.currentTool = btn.dataset.tool;
 
-    // Update cursor
-    if (state.currentTool === 'text') {
-      canvas.style.cursor = 'text';
-    } else if (state.currentTool === 'laser') {
-      canvas.style.cursor = 'none';
-    } else {
-      canvas.style.cursor = 'crosshair';
-    }
+    updateCursor();
   });
 });
 
