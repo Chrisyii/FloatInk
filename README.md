@@ -8,11 +8,11 @@
   </p>
 
   <p>
-    <a href="https://github.com/Chrisyii/FloatInk/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/Chrisyii/FloatInk?style=for-the-badge&color=blue"></a>
+    <a href="https://github.com/Chrisyii/FloatInk/releases/latest"><img alt="Release" src="https://img.shields.io/badge/version-1.0.0-blue?style=for-the-badge"></a>
     <img alt="macOS" src="https://img.shields.io/badge/macOS-000000?style=for-the-badge&logo=apple&logoColor=white">
     <img alt="Tauri" src="https://img.shields.io/badge/Tauri-FFC131?style=for-the-badge&logo=tauri&logoColor=white">
     <img alt="Rust" src="https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white">
-    <img alt="License" src="https://img.shields.io/github/license/Chrisyii/FloatInk?style=for-the-badge&color=green">
+    <img alt="License" src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge">
   </p>
 
   <p>

@@ -14,6 +14,9 @@ fn main() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .invoke_handler(tauri::generate_handler![hide_window])
         .setup(|app| {
+            #[cfg(target_os = "macos")]
+            app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+
             let window = app.get_webview_window("main").unwrap();
             metal_overlay::attach(&window)?;
             let _ = window.set_visible_on_all_workspaces(true);
@@ -32,9 +35,7 @@ fn main() {
             let window_clone = window.clone();
             app.global_shortcut().on_shortcut(shortcut, move |_app, _shortcut, _event| {
                 // Press shortcut once to bring up toolbar, regardless of current state
-                let _ = metal_overlay::reinforce_level(&window_clone);
-                let _ = window_clone.show();
-                let _ = window_clone.set_focus();
+                let _ = metal_overlay::present(&window_clone);
                 let _ = window_clone.set_ignore_cursor_events(false);
             })?;
 

@@ -2,17 +2,36 @@ use tauri::{Runtime, WebviewWindow};
 
 #[cfg(target_os = "macos")]
 fn apply_overlay_window_level(ns_window: &objc2_app_kit::NSWindow) {
-    use objc2_app_kit::{NSPopUpMenuWindowLevel, NSWindowCollectionBehavior};
+    use objc2_app_kit::NSWindowCollectionBehavior;
+    use objc2_core_graphics::CGShieldingWindowLevel;
 
-    ns_window.setLevel(NSPopUpMenuWindowLevel);
+    ns_window.setLevel(CGShieldingWindowLevel() as isize + 1);
 
     let mut behavior = ns_window.collectionBehavior();
     behavior.insert(
         NSWindowCollectionBehavior::CanJoinAllSpaces
             | NSWindowCollectionBehavior::FullScreenAuxiliary
+            | NSWindowCollectionBehavior::MoveToActiveSpace
             | NSWindowCollectionBehavior::Stationary,
     );
     ns_window.setCollectionBehavior(behavior);
+}
+
+#[cfg(target_os = "macos")]
+pub fn present<R: Runtime>(window: &WebviewWindow<R>) -> tauri::Result<()> {
+    let _ = window.show();
+
+    window.with_webview(|webview| unsafe {
+        let ns_window: &objc2_app_kit::NSWindow = &*webview.ns_window().cast();
+        apply_overlay_window_level(ns_window);
+        ns_window.orderFrontRegardless();
+    })
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn present<R: Runtime>(window: &WebviewWindow<R>) -> tauri::Result<()> {
+    let _ = window.show();
+    Ok(())
 }
 
 #[cfg(target_os = "macos")]
@@ -41,6 +60,7 @@ pub fn attach<R: Runtime>(window: &WebviewWindow<R>) -> tauri::Result<()> {
         let ns_window: &NSWindow = &*webview.ns_window().cast();
         ns_window.setOpaque(false);
         ns_window.setHasShadow(false);
+        ns_window.setHidesOnDeactivate(false);
         apply_overlay_window_level(ns_window);
 
         let tint = NSColor::colorWithDeviceRed_green_blue_alpha(1.0, 1.0, 1.0, 0.01);
