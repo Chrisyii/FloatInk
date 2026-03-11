@@ -17,11 +17,11 @@ fn main() {
             let window = app.get_webview_window("main").unwrap();
             metal_overlay::attach(&window)?;
 
-            // 初始时隐藏窗口，避免启动时抢占桌面
+            // Hide window initially to avoid preempting desktop on startup
             let _ = window.hide();
             let _ = window.set_ignore_cursor_events(true);
 
-            // 注册全局快捷键 Cmd+Shift+D
+            // Register global shortcut Cmd+Shift+D
             let shortcut = Shortcut::new(
                 Some(Modifiers::SUPER | Modifiers::SHIFT),
                 Code::KeyD,
@@ -29,7 +29,7 @@ fn main() {
 
             let window_clone = window.clone();
             app.global_shortcut().on_shortcut(shortcut, move |_app, _shortcut, _event| {
-                // 按一次快捷键就调出工具栏，不管当前状态
+                // Press shortcut once to bring up toolbar, regardless of current state
                 let _ = window_clone.show();
                 let _ = window_clone.set_focus();
                 let _ = window_clone.set_ignore_cursor_events(false);

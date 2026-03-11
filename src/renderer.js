@@ -1,8 +1,8 @@
-// === 屏幕标注工具 - 核心绘图引擎 ===
+// === Screen Annotation Tool - Core Drawing Engine ===
 
-const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: () => {} };
+const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: () => { } };
 
-// --- 状态管理 ---
+// --- State Management ---
 const state = {
   currentTool: 'pen',
   currentColor: '#FF3B30',
@@ -10,14 +10,14 @@ const state = {
   isDrawing: false,
   startX: 0,
   startY: 0,
-  // 操作历史（用于撤销）
+  // Operation history (for undo)
   history: [],
   redoStack: [],
-  // 文字工具状态
+  // Text tool state
   textMode: false,
 };
 
-// --- Canvas 初始化 ---
+// --- Canvas Initialization ---
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
@@ -71,13 +71,13 @@ window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 resetDrawState();
 
-// --- 保存/恢复画布快照 ---
+// --- Save/Restore Canvas Snapshot ---
 function saveSnapshot() {
   const dpr = window.devicePixelRatio || 1;
   const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
   state.history.push(data);
   state.redoStack = [];
-  // 最多保留 50 步
+  // Keep up to 50 steps
   if (state.history.length > 50) state.history.shift();
 }
 
@@ -109,12 +109,12 @@ function clearCanvas() {
 }
 
 function redrawAll() {
-  // 当窗口大小变化时保持内容（暂简化处理）
+  // Preserve content on window resize (simplified)
 }
 
-// --- 绘图工具实现 ---
+// --- Drawing Tool Implementation ---
 
-// 高精度画笔 - 收集点
+// High precision pen - Collect points
 let penPoints = [];
 
 function drawPreciseStroke(from, to, color, width, alpha = 1) {
@@ -161,13 +161,13 @@ function drawArrow(x1, y1, x2, y2, color, width) {
 
   beginStroke(color, width);
 
-  // 线段
+  // Line segment
   ctx.beginPath();
   ctx.moveTo(x1, y1);
   ctx.lineTo(x2, y2);
   ctx.stroke();
 
-  // 箭头
+  // Arrow head
   ctx.beginPath();
   ctx.moveTo(x2, y2);
   ctx.lineTo(x2 - headLen * Math.cos(angle - Math.PI / 6), y2 - headLen * Math.sin(angle - Math.PI / 6));
@@ -217,18 +217,18 @@ function drawLine(x1, y1, x2, y2, color, width) {
   ctx.restore();
 }
 
-// --- 激光笔效果 ---
+// --- Laser Pointer Effect ---
 let laserTrail = [];
 let laserAnimFrame = null;
 
 function animateLaser() {
   const now = Date.now();
-  // 清除已经消失的轨迹点
+  // Clear disappeared trail points
   laserTrail = laserTrail.filter(p => now - p.t < 800);
 
   if (laserTrail.length > 1) {
-    // 需要在上一帧基础上重绘，但这里简单重绘激光效果层
-    // 实际上激光笔只在临时层绘制
+    // Need to redraw based on previous frame, but simply redraw laser effect layer here
+    // Actually the laser pointer is only drawn on the temporary layer
   }
 
   if (laserTrail.length > 0 || state.currentTool === 'laser') {
@@ -236,7 +236,7 @@ function animateLaser() {
   }
 }
 
-// --- 拖拽预览用的临时快照 ---
+// --- Temporary Snapshot for Drag Preview ---
 let previewSnapshot = null;
 
 function savePreview() {
@@ -249,7 +249,7 @@ function restorePreview() {
   }
 }
 
-// --- 鼠标事件处理 ---
+// --- Mouse Event Handling ---
 canvas.addEventListener('mousedown', onMouseDown);
 canvas.addEventListener('mousemove', onMouseMove);
 canvas.addEventListener('mouseup', onMouseUp);
@@ -282,14 +282,14 @@ function onMouseDown(e) {
     state.isDrawing = false;
     return;
   } else if (tool === 'check') {
-    // 对勾直接画
+    // Draw checkmark directly
     saveSnapshot();
     const size = 30;
     drawCheck(pos.x, pos.y, size, state.currentColor, state.lineWidth + 1);
     state.isDrawing = false;
     return;
   } else {
-    // 形状工具 - 保存预览快照
+    // Shape tool - save preview snapshot
     saveSnapshot();
     savePreview();
   }
@@ -310,7 +310,7 @@ function onMouseMove(e) {
     drawPreciseStroke(prev, pos, state.currentColor, state.lineWidth * 4, 0.35);
   } else if (tool === 'laser') {
     laserTrail.push({ ...pos, t: Date.now() });
-    // 绘制激光笔效果（临时红色发光线条）
+    // Draw laser pointer effect (temporary red glowing line)
     restorePreview();
     if (!previewSnapshot) savePreview();
     const now = Date.now();
@@ -332,7 +332,7 @@ function onMouseMove(e) {
       ctx.restore();
     }
   } else {
-    // 形状预览
+    // Shape preview
     restorePreview();
     if (tool === 'arrow') {
       drawArrow(state.startX, state.startY, pos.x, pos.y, state.currentColor, state.lineWidth);
@@ -355,7 +355,7 @@ function onMouseUp(e) {
   if (tool === 'pen' || tool === 'marker') {
     penPoints = [];
   } else if (tool === 'laser') {
-    // 激光笔结束后清除轨迹（淡出效果）
+    // Clear trail after laser pointer ends (fade out effect)
     setTimeout(() => {
       if (!state.isDrawing) {
         restorePreview();
@@ -367,7 +367,7 @@ function onMouseUp(e) {
   previewSnapshot = null;
 }
 
-// --- 文字工具 ---
+// --- Text Tool ---
 const textInput = document.getElementById('text-input');
 
 function showTextInput(x, y) {
@@ -422,7 +422,7 @@ function commitText() {
   textInput.value = '';
 }
 
-// --- 工具栏交互 ---
+// --- Toolbar Interaction ---
 const sizeSlider = document.getElementById('size-slider');
 const sizeValue = document.getElementById('size-value');
 
@@ -444,7 +444,7 @@ sizeSlider.addEventListener('mousedown', (e) => {
   e.stopPropagation();
 });
 
-// 颜色选择
+// Color Selection
 document.querySelectorAll('.color-btn').forEach(btn => {
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -454,7 +454,7 @@ document.querySelectorAll('.color-btn').forEach(btn => {
   });
 });
 
-// 工具选择
+// Tool Selection
 document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -462,7 +462,7 @@ document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
     btn.classList.add('active');
     state.currentTool = btn.dataset.tool;
 
-    // 更新光标
+    // Update cursor
     if (state.currentTool === 'text') {
       canvas.style.cursor = 'text';
     } else if (state.currentTool === 'laser') {
@@ -473,41 +473,41 @@ document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
   });
 });
 
-// 撤销
+// Undo
 document.getElementById('undo-btn').addEventListener('click', (e) => {
   e.stopPropagation();
   undo();
 });
 
-// 清除
+// Clear
 document.getElementById('clear-btn').addEventListener('click', (e) => {
   e.stopPropagation();
   clearCanvas();
 });
 
-// --- 键盘快捷键 ---
+// --- Keyboard Shortcuts ---
 document.addEventListener('keydown', (e) => {
-  // Cmd+Z 撤销
+  // Cmd+Z Undo
   if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
     e.preventDefault();
     undo();
   }
-  // Cmd+Shift+Z 重做
+  // Cmd+Shift+Z Redo
   if ((e.metaKey || e.ctrlKey) && e.key === 'z' && e.shiftKey) {
     e.preventDefault();
     redo();
   }
-  // Escape - 通知 Rust 后端退出
+  // Escape - Notify Rust backend to exit
   if (e.key === 'Escape') {
     e.preventDefault();
     clearCanvas();
     try {
       invoke('hide_window');
-    } catch (_) {}
+    } catch (_) { }
   }
 });
 
-// 阻止工具栏上的鼠标事件传递到画布
+// Prevent mouse events on toolbar from passing to canvas
 document.getElementById('toolbar').addEventListener('mousedown', (e) => {
   e.stopPropagation();
 });

@@ -1,11 +1,12 @@
-/* === 全局重置 === */
+/* === Global Reset === */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
@@ -15,7 +16,7 @@ html, body {
   cursor: crosshair;
 }
 
-/* === 全屏画布 === */
+/* === Fullscreen Canvas === */
 #canvas {
   position: fixed;
   top: 0;
@@ -27,7 +28,7 @@ html, body {
   filter: none;
 }
 
-/* === 浮动工具栏 === */
+/* === Floating Toolbar === */
 .toolbar {
   position: fixed;
   top: 16px;
@@ -44,7 +45,7 @@ html, body {
   border-radius: 0;
   border: 0;
   box-shadow: none;
-  /* 拖拽支持 */
+  /* Drag Support */
   -webkit-app-region: drag;
 }
 
@@ -88,7 +89,7 @@ html, body {
   margin: 0 6px;
 }
 
-/* === 颜色按钮 === */
+/* === Color Buttons === */
 .color-btn {
   width: 16px;
   height: 16px;
@@ -110,15 +111,16 @@ html, body {
   transform: scale(1.15);
 }
 
-/* 白色按钮加灰边区分 */
+/* Add gray border to white button for contrast */
 .color-btn[data-color="#FFFFFF"] {
   border: 2px solid rgba(255, 255, 255, 0.3);
 }
+
 .color-btn[data-color="#FFFFFF"].active {
   border-color: rgba(255, 255, 255, 0.9);
 }
 
-/* === 工具按钮 === */
+/* === Tool Buttons === */
 .tool-btn {
   display: flex;
   align-items: center;
@@ -154,7 +156,7 @@ html, body {
   pointer-events: none;
 }
 
-/* === 文字输入框 === */
+/* === Text Input === */
 .text-input {
   position: fixed;
   display: none;
@@ -172,9 +174,9 @@ html, body {
   backdrop-filter: blur(8px);
 }
 
-/* === 快捷键提示（可选） === */
+/* === Shortcut Tooltip (Optional) === */
 .toolbar::after {
-  content: '⌘⇧D 切换 · Esc 退出';
+  content: '⌘⇧D Toggle · Esc Exit';
   position: absolute;
   bottom: -24px;
   left: 50%;
