@@ -38,13 +38,13 @@ body {
   display: flex;
   align-items: center;
   gap: 2px;
-  padding: 0;
-  background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  border-radius: 0;
-  border: 0;
-  box-shadow: none;
+  padding: 4px 8px;
+  background: rgba(30, 30, 30, 0.75);
+  backdrop-filter: blur(12px) saturate(1.5);
+  -webkit-backdrop-filter: blur(12px) saturate(1.5);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
   /* Drag Support */
   -webkit-app-region: drag;
 }
@@ -176,7 +176,7 @@ body {
 
 /* === Shortcut Tooltip (Optional) === */
 .toolbar::after {
-  content: '⌘⇧D Toggle · Esc Exit';
+  content: attr(data-shortcut-hint);
   position: absolute;
   bottom: -24px;
   left: 50%;
@@ -192,4 +192,44 @@ body {
 
 .toolbar:hover::after {
   opacity: 1;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.inline-shortcut-settings {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 2px;
+  padding-left: 4px;
+}
+
+.inline-shortcut-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1;
+}
+
+.shortcut-chip {
+  font-size: 12px;
+  min-width: 58px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.95);
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+
+.shortcut-chip:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.shortcut-chip.recording {
+  background: rgba(0, 122, 255, 0.3);
+  border-color: rgba(0, 122, 255, 0.95);
 }

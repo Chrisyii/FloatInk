@@ -1,6 +1,6 @@
 // === Screen Annotation Tool - Core Drawing Engine ===
 
-const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: () => { } };
+const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: async () => null };
 
 // --- Custom Cursors ---
 const pencilCursor = (() => {
@@ -9,7 +9,7 @@ const pencilCursor = (() => {
 })();
 
 const laserCursor = (() => {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="4" fill="%23FF3B30" opacity="0.9"/><circle cx="8" cy="8" r="2" fill="white" opacity="0.7"/></svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="4" fill="#FF3B30" opacity="0.9"/><circle cx="8" cy="8" r="2" fill="white" opacity="0.7"/></svg>`;
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 8 8, crosshair`;
 })();
 
@@ -24,8 +24,6 @@ const state = {
   // Operation history (for undo)
   history: [],
   redoStack: [],
-  // Text tool state
-  textMode: false,
 };
 
 // --- Canvas Initialization ---
@@ -95,7 +93,6 @@ updateCursor();
 
 // --- Save/Restore Canvas Snapshot ---
 function saveSnapshot() {
-  const dpr = window.devicePixelRatio || 1;
   const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
   state.history.push(data);
   state.redoStack = [];
@@ -105,7 +102,6 @@ function saveSnapshot() {
 
 function undo() {
   if (state.history.length === 0) return;
-  const dpr = window.devicePixelRatio || 1;
   const current = ctx.getImageData(0, 0, canvas.width, canvas.height);
   state.redoStack.push(current);
   const prev = state.history.pop();
@@ -445,7 +441,9 @@ function onMouseUp(e) {
     // Laser trail fades out via animation loop, nothing to do here
   }
 
-  previewSnapshot = null;
+  if (tool !== 'laser') {
+    previewSnapshot = null;
+  }
 }
 
 // --- Text Tool ---
@@ -560,8 +558,201 @@ document.getElementById('clear-btn').addEventListener('click', (e) => {
   clearCanvas();
 });
 
+const toolbar = document.getElementById('toolbar');
+const settingsBtn = document.getElementById('settings-btn');
+const inlineShortcutSettings = document.getElementById('inline-shortcut-settings');
+const shortcutChip = document.getElementById('shortcut-chip');
+
+let currentToggleShortcut = 'CommandOrControl+Shift+D';
+let isRecordingShortcut = false;
+
+function formatShortcutForDisplay(shortcut) {
+  return shortcut
+    .split('+')
+    .filter(Boolean)
+    .map((token) => {
+      const lower = token.toLowerCase();
+      if (lower === 'commandorcontrol' || lower === 'command' || lower === 'cmd' || lower === 'super') return '⌘';
+      if (lower === 'control' || lower === 'ctrl') return '⌃';
+      if (lower === 'shift') return '⇧';
+      if (lower === 'alt' || lower === 'option') return '⌥';
+      if (lower.startsWith('key') && token.length === 4) return token.slice(3).toUpperCase();
+      if (lower.startsWith('digit')) return token.slice(5);
+      return token.length === 1 ? token.toUpperCase() : token;
+    })
+    .join('');
+}
+
+function setToolbarShortcutHint(shortcut) {
+  toolbar.dataset.shortcutHint = `${formatShortcutForDisplay(shortcut)} Toggle · Esc Exit`;
+}
+
+function updateShortcutChip(shortcut = currentToggleShortcut) {
+  shortcutChip.textContent = formatShortcutForDisplay(shortcut);
+}
+
+function showInlineSettings() {
+  inlineShortcutSettings.classList.remove('hidden');
+}
+
+function hideInlineSettings() {
+  inlineShortcutSettings.classList.add('hidden');
+  stopRecordingShortcut(true);
+}
+
+function startRecordingShortcut() {
+  isRecordingShortcut = true;
+  shortcutChip.classList.add('recording');
+  shortcutChip.textContent = 'Press keys…';
+}
+
+function stopRecordingShortcut(restoreDisplay = true) {
+  isRecordingShortcut = false;
+  shortcutChip.classList.remove('recording');
+  if (restoreDisplay) {
+    updateShortcutChip();
+  }
+}
+
+function keyTokenFromCode(code) {
+  if (!code) return null;
+  if (code.startsWith('Key')) return code.slice(3).toUpperCase();
+  if (code.startsWith('Digit')) return code.slice(5);
+  if (/^F\d{1,2}$/.test(code)) return code;
+  if (code.startsWith('Numpad')) return code;
+
+  const codeMap = {
+    Backquote: '`',
+    Minus: '-',
+    Equal: '=',
+    BracketLeft: '[',
+    BracketRight: ']',
+    Backslash: '\\',
+    Semicolon: ';',
+    Quote: '\'',
+    Comma: ',',
+    Period: '.',
+    Slash: '/',
+    Space: 'Space',
+    Tab: 'Tab',
+    Enter: 'Enter',
+    Escape: 'Escape',
+    Backspace: 'Backspace',
+    Delete: 'Delete',
+    Insert: 'Insert',
+    Home: 'Home',
+    End: 'End',
+    PageUp: 'PageUp',
+    PageDown: 'PageDown',
+    ArrowUp: 'ArrowUp',
+    ArrowDown: 'ArrowDown',
+    ArrowLeft: 'ArrowLeft',
+    ArrowRight: 'ArrowRight',
+  };
+
+  return codeMap[code] || null;
+}
+
+function buildShortcutFromKeyEvent(e) {
+  const modifierCodes = new Set([
+    'MetaLeft', 'MetaRight',
+    'ControlLeft', 'ControlRight',
+    'ShiftLeft', 'ShiftRight',
+    'AltLeft', 'AltRight',
+  ]);
+  if (modifierCodes.has(e.code)) return null;
+
+  const keyToken = keyTokenFromCode(e.code);
+  if (!keyToken) return null;
+
+  const parts = [];
+  if (e.metaKey) parts.push('Command');
+  if (e.ctrlKey) parts.push('Control');
+  if (e.altKey) parts.push('Alt');
+  if (e.shiftKey) parts.push('Shift');
+  if (parts.length === 0) return null;
+
+  parts.push(keyToken);
+  return parts.join('+');
+}
+
+async function refreshShortcutFromBackend() {
+  try {
+    const shortcut = await invoke('get_toggle_shortcut');
+    if (shortcut && typeof shortcut === 'string') {
+      currentToggleShortcut = shortcut;
+    }
+  } catch (_) { }
+
+  setToolbarShortcutHint(currentToggleShortcut);
+  updateShortcutChip(currentToggleShortcut);
+}
+
+async function applyShortcut(shortcut) {
+  try {
+    const saved = await invoke('set_toggle_shortcut', { shortcut });
+    currentToggleShortcut = saved;
+    setToolbarShortcutHint(saved);
+    updateShortcutChip(saved);
+  } catch (_) {
+    updateShortcutChip(currentToggleShortcut);
+  }
+}
+
+settingsBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (inlineShortcutSettings.classList.contains('hidden')) {
+    showInlineSettings();
+  } else {
+    hideInlineSettings();
+  }
+});
+
+shortcutChip.addEventListener('click', (e) => {
+  e.stopPropagation();
+  showInlineSettings();
+  if (isRecordingShortcut) {
+    stopRecordingShortcut(true);
+  } else {
+    startRecordingShortcut();
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (!isRecordingShortcut) return;
+
+  const shortcut = buildShortcutFromKeyEvent(e);
+  e.preventDefault();
+  e.stopPropagation();
+
+  if (e.key === 'Escape') {
+    stopRecordingShortcut(true);
+    return;
+  }
+
+  if (!shortcut) {
+    return;
+  }
+
+  stopRecordingShortcut(false);
+  applyShortcut(shortcut);
+}, true);
+
+function openInlineSettings(shortcut) {
+  if (typeof shortcut === 'string' && shortcut) {
+    currentToggleShortcut = shortcut;
+  }
+  setToolbarShortcutHint(currentToggleShortcut);
+  updateShortcutChip(currentToggleShortcut);
+  showInlineSettings();
+}
+
 // --- Keyboard Shortcuts ---
 document.addEventListener('keydown', (e) => {
+  if (isRecordingShortcut) {
+    return;
+  }
+
   // Cmd+Z Undo
   if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
     e.preventDefault();
@@ -586,3 +777,9 @@ document.addEventListener('keydown', (e) => {
 document.getElementById('toolbar').addEventListener('mousedown', (e) => {
   e.stopPropagation();
 });
+
+refreshShortcutFromBackend();
+window.__floatinkOpenInlineSettingsFromRust = (shortcut) => {
+  const value = typeof shortcut === 'string' && shortcut ? shortcut : currentToggleShortcut;
+  openInlineSettings(value);
+};
