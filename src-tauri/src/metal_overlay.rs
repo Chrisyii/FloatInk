@@ -1,52 +1,7 @@
 use tauri::{Runtime, WebviewWindow};
 
-#[cfg(target_os = "macos")]
-fn apply_overlay_window_level(ns_window: &objc2_app_kit::NSWindow) {
-    use objc2_app_kit::NSWindowCollectionBehavior;
-    use objc2_core_graphics::CGShieldingWindowLevel;
-
-    ns_window.setLevel(CGShieldingWindowLevel() as isize + 1);
-
-    let mut behavior = ns_window.collectionBehavior();
-    behavior.insert(
-        NSWindowCollectionBehavior::CanJoinAllSpaces
-            | NSWindowCollectionBehavior::FullScreenAuxiliary
-            | NSWindowCollectionBehavior::MoveToActiveSpace
-            | NSWindowCollectionBehavior::Stationary,
-    );
-    ns_window.setCollectionBehavior(behavior);
-}
-
-#[cfg(target_os = "macos")]
-pub fn present<R: Runtime>(window: &WebviewWindow<R>) -> tauri::Result<()> {
-    let _ = window.show();
-
-    window.with_webview(|webview| unsafe {
-        let ns_window: &objc2_app_kit::NSWindow = &*webview.ns_window().cast();
-        apply_overlay_window_level(ns_window);
-        ns_window.orderFrontRegardless();
-    })
-}
-
-#[cfg(not(target_os = "macos"))]
-pub fn present<R: Runtime>(window: &WebviewWindow<R>) -> tauri::Result<()> {
-    let _ = window.show();
-    Ok(())
-}
-
-#[cfg(target_os = "macos")]
-pub fn reinforce_level<R: Runtime>(window: &WebviewWindow<R>) -> tauri::Result<()> {
-    window.with_webview(|webview| unsafe {
-        let ns_window: &objc2_app_kit::NSWindow = &*webview.ns_window().cast();
-        apply_overlay_window_level(ns_window);
-    })
-}
-
-#[cfg(not(target_os = "macos"))]
-pub fn reinforce_level<R: Runtime>(_window: &WebviewWindow<R>) -> tauri::Result<()> {
-    Ok(())
-}
-
+/// Attach a transparent Metal layer behind the Webview to eliminate
+/// the white flash that occurs with standard Tauri transparent windows.
 #[cfg(target_os = "macos")]
 pub fn attach<R: Runtime>(window: &WebviewWindow<R>) -> tauri::Result<()> {
     use objc2::{MainThreadMarker, MainThreadOnly};
@@ -57,12 +12,18 @@ pub fn attach<R: Runtime>(window: &WebviewWindow<R>) -> tauri::Result<()> {
     use objc2_quartz_core::CAMetalLayer;
 
     window.with_webview(|webview| unsafe {
-        let ns_window: &NSWindow = &*webview.ns_window().cast();
+        let ns_window_ptr = webview.ns_window();
+        if ns_window_ptr.is_null() {
+            eprintln!("[floatink] attach: ns_window pointer is null, skipping");
+            return;
+        }
+        let ns_window: &NSWindow = &*ns_window_ptr.cast();
+
+        // Make the window truly transparent
         ns_window.setOpaque(false);
         ns_window.setHasShadow(false);
-        ns_window.setHidesOnDeactivate(false);
-        apply_overlay_window_level(ns_window);
 
+        // Near-transparent background to avoid white flash
         let tint = NSColor::colorWithDeviceRed_green_blue_alpha(1.0, 1.0, 1.0, 0.01);
         ns_window.setBackgroundColor(Some(&tint));
 
@@ -71,10 +32,13 @@ pub fn attach<R: Runtime>(window: &WebviewWindow<R>) -> tauri::Result<()> {
         };
 
         let frame = content_view.bounds();
-        let mtm = MainThreadMarker::new_unchecked();
+        let Some(mtm) = MainThreadMarker::new() else {
+            return;
+        };
         let metal_host_view = NSView::initWithFrame(NSView::alloc(mtm), frame);
         metal_host_view.setAutoresizingMask(
-            NSAutoresizingMaskOptions::ViewWidthSizable | NSAutoresizingMaskOptions::ViewHeightSizable,
+            NSAutoresizingMaskOptions::ViewWidthSizable
+                | NSAutoresizingMaskOptions::ViewHeightSizable,
         );
         metal_host_view.setWantsLayer(true);
 
