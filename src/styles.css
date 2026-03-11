@@ -1,0 +1,193 @@
+/* === 全局重置 === */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: crosshair;
+}
+
+/* === 全屏画布 === */
+#canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+  background: transparent;
+  filter: none;
+}
+
+/* === 浮动工具栏 === */
+.toolbar {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-radius: 0;
+  border: 0;
+  box-shadow: none;
+  /* 拖拽支持 */
+  -webkit-app-region: drag;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  -webkit-app-region: no-drag;
+}
+
+.size-control {
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.size-label,
+.size-value {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.78);
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  line-height: 1;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.size-value {
+  min-width: 30px;
+  text-align: right;
+}
+
+.size-slider {
+  width: 96px;
+  accent-color: #ffffff;
+  cursor: pointer;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 6px;
+}
+
+/* === 颜色按钮 === */
+.color-btn {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  outline: none;
+  -webkit-app-region: no-drag;
+}
+
+.color-btn:hover {
+  transform: scale(1.2);
+}
+
+.color-btn.active {
+  border-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
+  transform: scale(1.15);
+}
+
+/* 白色按钮加灰边区分 */
+.color-btn[data-color="#FFFFFF"] {
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+.color-btn[data-color="#FFFFFF"].active {
+  border-color: rgba(255, 255, 255, 0.9);
+}
+
+/* === 工具按钮 === */
+.tool-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.65);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  outline: none;
+  -webkit-app-region: no-drag;
+}
+
+.tool-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.tool-btn.active {
+  background: rgba(255, 255, 255, 0.18);
+  color: #FFFFFF;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.tool-btn:active {
+  transform: scale(0.92);
+}
+
+.tool-btn svg {
+  pointer-events: none;
+}
+
+/* === 文字输入框 === */
+.text-input {
+  position: fixed;
+  display: none;
+  z-index: 500;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 18px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  padding: 4px 8px;
+  outline: none;
+  resize: none;
+  min-width: 120px;
+  backdrop-filter: blur(8px);
+}
+
+/* === 快捷键提示（可选） === */
+.toolbar::after {
+  content: '⌘⇧D 切换 · Esc 退出';
+  position: absolute;
+  bottom: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.3);
+  white-space: nowrap;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.toolbar:hover::after {
+  opacity: 1;
+}
