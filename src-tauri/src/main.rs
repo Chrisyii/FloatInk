@@ -206,7 +206,7 @@ fn open_settings_panel(app_handle: &tauri::AppHandle) {
 
     if let Some(window) = app_handle.get_webview_window("main") {
         let script = format!(
-            "window.__floatinkOpenSettingsFromRust && window.__floatinkOpenSettingsFromRust({shortcut_literal});"
+            "window.__floatinkOpenInlineSettingsFromRust && window.__floatinkOpenInlineSettingsFromRust({shortcut_literal});"
         );
         let _ = log_result("tray: eval open-settings", window.eval(&script));
     }
@@ -249,9 +249,12 @@ fn show_overlay(app_handle: &tauri::AppHandle) {
 
         // Activate the application so the panel receives mouse events
         // immediately, without requiring an extra click.
+        // `activateIgnoringOtherApps(true)` forces focus even on
+        // non-fullscreen desktops where `activate()` alone is insufficient.
         if let Some(mtm) = objc2::MainThreadMarker::new() {
             let app = objc2_app_kit::NSApplication::sharedApplication(mtm);
-            app.activate();
+            #[allow(deprecated)]
+            app.activateIgnoringOtherApps(true);
         }
     }
 }
@@ -298,7 +301,7 @@ fn main() {
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
 
             // --- System Tray Icon (menu bar) ---
-            let settings_item = MenuItemBuilder::with_id("settings", "Settings…").build(app)?;
+            let settings_item = MenuItemBuilder::with_id("settings", "Record Hotkey…").build(app)?;
             let toggle_item = MenuItemBuilder::with_id("toggle", "Toggle Overlay")
                 .build(app)?;
             let quit_item = MenuItemBuilder::with_id("quit", "Quit FloatInk")

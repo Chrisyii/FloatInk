@@ -3,10 +3,10 @@
 const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: async () => null };
 
 // --- Custom Cursors ---
-const pencilCursor = (() => {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l1.5-4.5L17 4a2 2 0 0 1 3 3L7.5 19.5Z"/><path d="M15 6l3 3"/></svg>`;
+function buildPencilCursor(color) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l1.5-4.5L17 4a2 2 0 0 1 3 3L7.5 19.5Z"/><path d="M15 6l3 3"/></svg>`;
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 2 22, crosshair`;
-})();
+}
 
 const laserCursor = (() => {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="4" fill="#FF3B30" opacity="0.9"/><circle cx="8" cy="8" r="2" fill="white" opacity="0.7"/></svg>`;
@@ -86,7 +86,7 @@ function updateCursor() {
   } else if (state.currentTool === 'laser') {
     canvas.style.cursor = laserCursor;
   } else {
-    canvas.style.cursor = pencilCursor;
+    canvas.style.cursor = buildPencilCursor(state.currentColor);
   }
 }
 updateCursor();
@@ -531,6 +531,7 @@ document.querySelectorAll('.color-btn').forEach(btn => {
     document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     state.currentColor = btn.dataset.color;
+    updateCursor();
   });
 });
 
@@ -738,13 +739,16 @@ document.addEventListener('keydown', (e) => {
   applyShortcut(shortcut);
 }, true);
 
-function openInlineSettings(shortcut) {
+function openInlineSettings(shortcut, autoRecord = false) {
   if (typeof shortcut === 'string' && shortcut) {
     currentToggleShortcut = shortcut;
   }
   setToolbarShortcutHint(currentToggleShortcut);
   updateShortcutChip(currentToggleShortcut);
   showInlineSettings();
+  if (autoRecord) {
+    startRecordingShortcut();
+  }
 }
 
 // --- Keyboard Shortcuts ---
@@ -781,5 +785,5 @@ document.getElementById('toolbar').addEventListener('mousedown', (e) => {
 refreshShortcutFromBackend();
 window.__floatinkOpenInlineSettingsFromRust = (shortcut) => {
   const value = typeof shortcut === 'string' && shortcut ? shortcut : currentToggleShortcut;
-  openInlineSettings(value);
+  openInlineSettings(value, true);
 };
